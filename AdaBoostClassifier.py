@@ -8,7 +8,7 @@ class AdaBoostClassifier:
     """
     Implementation of adaboost - with custom loss function
     """
-    def __init__(self, n_estimators, lr, type2penalty = False):
+    def __init__(self, n_estimators, lr, type2penalty = False, max_DT_depth = None):
         """
         Args:
             n_estimators = number of stumps the final tree will be built from
@@ -19,6 +19,7 @@ class AdaBoostClassifier:
         self.stumps = []
         self.weights = None
         self.penalty = type2penalty
+        self.DT_depth = max_DT_depth
 
     def exp_loss(self, error):
         # -1 is ham, 1 is spam
@@ -31,15 +32,16 @@ class AdaBoostClassifier:
         Train the AdaBoost classifier.
 
         Args:
-            X: Training data (2D array).
-            y: Training labels (1D array).
+            X: Training data (2D numpy array).
+            y: Training labels (1D numpy array).
+            I think numpy is the best here
         """
         n_samples, n_features = X.shape
-        self.weights = np.ones(n_samples) / n_samples
+        self.weights = np.ones(n_samples) / n_samples # initial weights are 1/N
 
         for _ in range(self.n_estimators):
             # Fit a stump/weak learner
-            weak_learner = DecisionTreeClassifier()
+            weak_learner = DecisionTreeClassifier(max_depth = self.DT_depth) # we should experiment with this
             weak_learner.fit(X, y)
 
             # Predict using the weak learner
@@ -57,8 +59,26 @@ class AdaBoostClassifier:
             self.weights /= np.sum(self.weights)
 
             # Store the weak learner and its weight (alpha)
-            alpha = self.lr * np.log(np.sum(correct) / (np.sum(~correct) + 1e-10))
+            penalty = 1
+            if self.penalty:
+                penalty = np.exp(-1 * self.type2err(y, y_pred))
+            print(penalty)
+            alpha = self.lr * penalty * np.log(np.sum(correct) / (np.sum(~correct) + 1e-10))
+            # if the proportion of type 2 error (incorrectly FTR null hypothesis) is high, we penalize this weak learner's weight alpha
             self.stumps.append((weak_learner, alpha))
+
+    def type2err(self, y, y_pred):
+        """
+        Calculate the proportion of type 2 errors - when the true label is 1 - spam, and the predicted label is 0 - ham
+
+        Args:
+        y: true labels
+        y_pred: predicted labels
+        """
+        n = len(y)
+        errors = (y == 1) & (y_pred == 0)
+        return np.sum(errors)/n
+
 
     def predict(self, X):
         """
