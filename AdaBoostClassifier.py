@@ -62,7 +62,7 @@ class AdaBoostClassifier:
             penalty = 1
             if self.penalty:
                 penalty = np.exp(-1 * self.type2err(y, y_pred))
-            print(penalty)
+            #print(penalty)
             alpha = self.lr * penalty * np.log(np.sum(correct) / (np.sum(~correct) + 1e-10))
             # if the proportion of type 2 error (incorrectly FTR null hypothesis) is high, we penalize this weak learner's weight alpha
             self.stumps.append((weak_learner, alpha))
