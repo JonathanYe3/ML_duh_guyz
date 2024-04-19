@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import BaggingClassifier
 
 # We should weight each alpha by 1-p, where p is the type 2 errors/all samples 
 
@@ -18,7 +19,7 @@ class AdaBoostClassifier:
         self.lr = lr
         self.stumps = []
         self.weights = None
-        self.penalty = type2penalty
+        self.type2penalty = type2penalty
         self.DT_depth = max_DT_depth
 
     def exp_loss(self, error):
@@ -41,7 +42,8 @@ class AdaBoostClassifier:
 
         for _ in range(self.n_estimators):
             # Fit a stump/weak learner
-            weak_learner = DecisionTreeClassifier(max_depth = self.DT_depth) # we should experiment with this
+            #weak_learner = DecisionTreeClassifier(max_depth = self.DT_depth) # we should experiment with this
+            weak_learner = BaggingClassifier(n_estimators=5)
             weak_learner.fit(X, y)
 
             # Predict using the weak learner
@@ -60,11 +62,11 @@ class AdaBoostClassifier:
 
             # Store the weak learner and its weight (alpha)
             penalty = 1
-            if self.penalty:
-                penalty = np.exp(-1 * self.type2err(y, y_pred))
+            if self.type2penalty:
+                penalty = np.exp(1 * self.type2err(y, y_pred))
             #print(penalty)
             alpha = self.lr * penalty * np.log(np.sum(correct) / (np.sum(~correct) + 1e-10))
-            # if the proportion of type 2 error (incorrectly FTR null hypothesis) is high, we penalize this weak learner's weight alpha
+            # if the proportion of type 2 error (incorrectly FTR null hypothesis) is high, we increase this weak learner's weight alpha to draw more attention to it
             self.stumps.append((weak_learner, alpha))
 
     def type2err(self, y, y_pred):
