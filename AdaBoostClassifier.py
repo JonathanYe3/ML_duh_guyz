@@ -77,7 +77,7 @@ class AdaBoostClassifier:
         y: true labels
         y_pred: predicted labels
         """
-        n = len(y)
+        n = y.shape[0]
         errors = (y == 1) & (y_pred == 0)
         return np.sum(errors)/n
 
