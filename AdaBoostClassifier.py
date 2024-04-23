@@ -42,21 +42,22 @@ class AdaBoostClassifier:
 
         for _ in range(self.n_estimators):
             # Fit a stump/weak learner
-            #weak_learner = DecisionTreeClassifier(max_depth = self.DT_depth) # we should experiment with this
-            weak_learner = BaggingClassifier(n_estimators=5)
+            #random_state = np.random.randint(1000)
+            #weak_learner = DecisionTreeClassifier(max_depth = 1, random_state=random_state) # we should experiment with this
+            weak_learner = BaggingClassifier(n_estimators=1)
             weak_learner.fit(X, y)
 
             # Predict using the weak learner
             y_pred = weak_learner.predict(X)
-            #print(f'predicted values \n {y_pred} \n true values \n {y}')
 
             # Calculate correct predictions
             correct = (y == y_pred)
-            #print(np.sum(correct))
+            #print("correct:", np.sum(correct))
 
             # Update weights based on correctness
             self.weights[correct] *= np.exp(-self.lr)  # Weight down correctly classified
             self.weights[~correct] *= np.exp(self.lr)  # Weight up incorrectly classified
+            #print("mean weights", np.mean(self.weights))
 
             self.weights /= np.sum(self.weights)
 
