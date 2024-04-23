@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 
 # Helper functions
-def compute_error(y, y_pred, w_i):
+def compute_error(y, y_pred, w_i, type2penalty):
     '''
     Calculate the error rate of a weak classifier m. Arguments:
     y: actual target value
@@ -15,8 +15,13 @@ def compute_error(y, y_pred, w_i):
     
     Note that all arrays should be the same length. Convert sparse array to regular array
     '''
+    if type2penalty:
+        error = (sum(w_i * (np.not_equal(y, y_pred)).astype(int)))/sum(w_i)
+    else:
+        type2 = type2err(y, y_pred)
+        error = np.exp(type2)*(sum(w_i * (np.not_equal(y, y_pred)).astype(int)))/sum(w_i)
 
-    return (sum(w_i * (np.not_equal(y, y_pred)).astype(int)))/sum(w_i)
+    return error
 
 def compute_alpha(error):
     '''
@@ -35,6 +40,18 @@ def update_weights(w_i, alpha, y, y_pred):
     alpha: weight of weak classifier used to estimate y_pred
     '''  
     return w_i * np.exp(alpha * (np.not_equal(y, y_pred)).astype(int))
+
+def type2err(y, y_pred):
+        """
+        Calculate the proportion of type 2 errors - when the true label is 1 - spam, and the predicted label is 0 - ham
+
+        Args:
+        y: true labels
+        y_pred: predicted labels
+        """
+        n = y.shape[0]
+        errors = (y == 1) & (y_pred == 0)
+        return np.sum(errors)/n
 
 # Define AdaBoost class
 class AdaBoostWeak:
@@ -80,12 +97,15 @@ class AdaBoostWeak:
             self.stumps.append(stump) # Save to list of weak classifiers
 
             # (b) Compute error
-            error_m = compute_error(y, y_pred, w_i)
+            error_m = compute_error(y, y_pred, w_i, self.type2penalty)
             self.training_errors.append(error_m)
             # print(error_m)
 
             # (c) Compute alpha
             alpha_m = compute_alpha(error_m)
+            # if self.type2penalty:
+            #     penalty = type2err(y = y, y_pred = y_pred)
+            #     alpha_m *= penalty
             self.alphas.append(alpha_m)
             # print(alpha_m)
 
@@ -110,7 +130,6 @@ class AdaBoostWeak:
         y_pred = np.sign(final_predictions).astype(int) # need to change -1 to 0  
         y_pred[y_pred == -1] = 0
         return y_pred
-
       
     def error_rates(self, X, y):
         '''
