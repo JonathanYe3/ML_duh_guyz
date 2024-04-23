@@ -52,12 +52,12 @@ class AdaBoostClassifier:
 
             # Calculate correct predictions
             correct = (y == y_pred)
-            #print("correct:", np.sum(correct))
+            print("correct:", np.sum(correct))
 
             # Update weights based on correctness
             self.weights[correct] *= np.exp(-self.lr)  # Weight down correctly classified
             self.weights[~correct] *= np.exp(self.lr)  # Weight up incorrectly classified
-            #print("mean weights", np.mean(self.weights))
+            print("mean weights", np.mean(self.weights))
 
             self.weights /= np.sum(self.weights)
 
