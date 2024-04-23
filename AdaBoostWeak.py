@@ -39,7 +39,7 @@ def update_weights(w_i, alpha, y, y_pred):
 # Define AdaBoost class
 class AdaBoostWeak:
     
-    def __init__(self, rounds, type2penalty):
+    def __init__(self, rounds, type2penalty = False, maxDTdepth = 1):
         # self.w_i = None
         self.alphas = []
         self.stumps = []
@@ -47,6 +47,7 @@ class AdaBoostWeak:
         self.training_errors = []
         self.prediction_errors = []
         self.type2penalty = type2penalty
+        self.maxDTdepth = maxDTdepth
 
     def fit(self, X, y):
         '''
@@ -72,7 +73,7 @@ class AdaBoostWeak:
             # print(w_i)
             
             # (a) Fit weak classifier and predict labels
-            stump = DecisionTreeClassifier(max_depth = 1)     # Stump: Two terminal-node classification tree
+            stump = DecisionTreeClassifier(max_depth = self.maxDTdepth)     # Stump: Two terminal-node classification tree
             stump.fit(X, y, sample_weight = w_i)
             y_pred = stump.predict(X)
             
