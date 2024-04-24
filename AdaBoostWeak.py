@@ -16,12 +16,18 @@ def compute_error(y, y_pred, w_i, type2penalty):
     Note that all arrays should be the same length. Convert sparse array to regular array
     '''
     if type2penalty:
-        error = (sum(w_i * (np.not_equal(y, y_pred)).astype(int)))/sum(w_i)
+        error = (sum(w_i * (t2_pred_err_vec(y, y_pred)).astype(int)))/sum(w_i)
     else:
-        type2 = type2err(y, y_pred)
-        error = np.exp(type2)*(sum(w_i * (np.not_equal(y, y_pred)).astype(int)))/sum(w_i)
+        error = (sum(w_i * (np.not_equal(y, y_pred)).astype(int)))/sum(w_i)
 
     return error
+def t2_pred_err_vec(y,y_pred):
+    pred_err_vec = ((y != y_pred) and (y==1))*2
+    better_err_vec = ((y!= y_pred)) and (y==0)
+    pred_err_vec = pred_err_vec+better_err_vec
+    return pred_err_vec
+
+
 
 def compute_alpha(error):
     '''
