@@ -17,19 +17,12 @@ def compute_error(y, y_pred, w_i, type2penalty):
     Note that all arrays should be the same length. Convert sparse array to regular array
     '''
     if type2penalty:
-        error = (sum(w_i * (t2_pred_err_vec(y, y_pred)).astype(float)))/sum(w_i)
-    else:
         error = (sum(w_i * (np.not_equal(y, y_pred)).astype(int)))/sum(w_i)
+    else:
+        type2 = type2err(y, y_pred)
+        error = np.exp(type2)*(sum(w_i * (np.not_equal(y, y_pred)).astype(int)))/sum(w_i)
 
     return error
-def t2_pred_err_vec(y,y_pred):
-    pred_err_vec = ((y_pred==-1) & (y==1))* (0.1)
-    better_err_vec = ((y_pred==1)) & (y==-1)
-    pred_err_vec = pred_err_vec+better_err_vec
-    if np.isnan(pred_err_vec).any(): print("WAHHHHH NAN")
-    return pred_err_vec
-
-
 
 def compute_alpha(error):
     '''
@@ -37,7 +30,7 @@ def compute_alpha(error):
     alpha in chapter 10.1 of The Elements of Statistical Learning. Arguments:
     error: error rate from weak classifier m
     '''
-    return np.log((1 - error + 1e-8) / (error + 1e-8))
+    return np.log((1 - error) / error)
 
 def update_weights(w_i, alpha, y, y_pred):
     ''' 
@@ -47,7 +40,7 @@ def update_weights(w_i, alpha, y, y_pred):
     y_pred: predicted value by weak classifier  
     alpha: weight of weak classifier used to estimate y_pred
     '''  
-    return w_i * np.exp(alpha * (np.not_equal(y, y_pred)).astype(float))
+    return w_i * np.exp(alpha * (np.not_equal(y, y_pred)).astype(int))
 
 def type2err(y, y_pred):
         """
@@ -172,6 +165,11 @@ class AdaBoostWeak:
             else:
                 setattr(self, key, value)
         return self
+    
+    
+#     def score_skl(self, X, y):
+#         y_pred = self.predict(X)
+#         return accuracy_score(y, y_pred)
     def score(self, X, y):
-        y_pred = self.predict(X)
+        y_pred = self.predict(X_test)
         return accuracy_score(y, y_pred)
