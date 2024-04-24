@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
 
 # Helper functions
 def compute_error(y, y_pred, w_i, type2penalty):
@@ -146,4 +147,24 @@ class AdaBoostWeak:
             error_m = compute_error(y = y, y_pred = y_pred_m, w_i = np.ones(len(y)))
             self.prediction_errors.append(error_m)
 
+            
+            
+            
+            
+    def get_params(self, deep=True):
+            return {'rounds': self.rounds,
+                    'type2penalty': self.type2penalty,
+                    'maxDTdepth': self.maxDTdepth}
 
+    def set_params(self, **params):
+        for key, value in params.items():
+            
+            
+            if key == 'maxDTdepth':
+                self.maxDTdepth = value
+            else:
+                setattr(self, key, value)
+        return self
+    def score(self, X, y):
+        y_pred = self.predict(X)
+        return accuracy_score(y, y_pred)
