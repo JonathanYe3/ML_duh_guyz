@@ -141,6 +141,26 @@ class AdaBoostWeakClassic:
         y_pred = np.sign(final_predictions).astype(int) # need to change -1 to 0  
         y_pred[y_pred == -1] = 0
         return y_pred
+    
+    def predict_probs(self, X):
+        '''
+        Predict using fitted model. Arguments:
+        X: independent variables
+        '''
+
+        # Initialize an array to store the final predictions
+        final_predictions = np.zeros(X.shape[0])
+
+        # Predict class label for each weak classifier, weighted by alpha_m
+        for m in range(self.rounds):
+            y_pred_m = self.stumps[m].predict(X) * self.alphas[m]
+            final_predictions += y_pred_m
+
+        # Estimate final predictions
+        # min_val = np.min(final_predictions)
+        # final_predictions += min_val
+        sigmoid = 1 / (1 + np.exp(-final_predictions))
+        return sigmoid
       
     def error_rates(self, X, y):
         '''
