@@ -2,7 +2,7 @@
 # Imports
 import numpy as np
 import pandas as pd
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
 # Helper functions
@@ -63,7 +63,7 @@ def type2err(y, y_pred):
         return np.sum(errors)/n
 
 # Define AdaBoost class
-class AdaBoostWeakClassic:
+class AdaBoostWeakClassicRF:
     
     def __init__(self, rounds, type2penalty = False, maxDTdepth = 1, pen_factor = 0.5):
         # self.w_i = None
@@ -101,7 +101,7 @@ class AdaBoostWeakClassic:
             # print(w_i)
             
             # (a) Fit weak classifier and predict labels
-            stump = DecisionTreeClassifier(max_depth = self.maxDTdepth)     # Stump: Two terminal-node classification tree
+            stump = RandomForestClassifier(max_depth = self.maxDTdepth)     # Stump: Two terminal-node classification tree
             stump.fit(X, y, sample_weight = w_i)
             y_pred = stump.predict(X)
             
@@ -141,26 +141,6 @@ class AdaBoostWeakClassic:
         y_pred = np.sign(final_predictions).astype(int) # need to change -1 to 0  
         y_pred[y_pred == -1] = 0
         return y_pred
-    
-    def predict_probs(self, X):
-        '''
-        Predict using fitted model. Arguments:
-        X: independent variables
-        '''
-
-        # Initialize an array to store the final predictions
-        final_predictions = np.zeros(X.shape[0])
-
-        # Predict class label for each weak classifier, weighted by alpha_m
-        for m in range(self.rounds):
-            y_pred_m = self.stumps[m].predict(X) * self.alphas[m]
-            final_predictions += y_pred_m
-
-        # Estimate final predictions
-        # min_val = np.min(final_predictions)
-        # final_predictions += min_val
-        sigmoid = 1 / (1 + np.exp(-final_predictions))
-        return sigmoid
       
     def error_rates(self, X, y):
         '''
