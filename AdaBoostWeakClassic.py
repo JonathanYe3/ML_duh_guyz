@@ -22,6 +22,24 @@ def compute_error(y, y_pred, w_i, type2penalty, pen_factor):
         error = (sum(w_i * (np.not_equal(y, y_pred)).astype(int)))/sum(w_i)
 
     return error
+
+def eval_errors(y, y_pred):
+        """
+        Calculate the proportion of type 2 errors - when the true label is 1 - spam, and the predicted label is 0 - ham
+
+        Args:
+        y: true labels
+        y_pred: predicted labels
+        """
+        n = y.shape[0]
+        y[y == -1] = 0
+        type2errors = ((y == 1) & (y_pred == 0)).sum().item()
+        type1errors = ((y == 0) & (y_pred == 1)).sum().item()
+        correct = (y_pred == y).sum().item()
+        #print(np.unique(y_pred), np.unique(y))
+        return type2errors, type1errors, correct
+
+
 def t2_pred_err_vec(y,y_pred, pen_factor):
     pred_err_vec = ((y_pred==-1) & (y==1))* pen_factor
     better_err_vec = ((y_pred==1)) & (y==-1)
@@ -75,40 +93,42 @@ class AdaBoostWeakClassic:
         self.type2penalty = type2penalty
         self.maxDTdepth = maxDTdepth
         self.pen_factor = pen_factor
+        self.accuracies = []
+        self.type2errors = []
 
     def fit(self, X, y):
         '''
         Fit model. Arguments:
         X: independent variables
         y: target variable
-        rounds: number of boosting rounds. Default is 100
         '''
         
         # Clear before calling
         self.alphas = [] 
         self.training_errors = []
-        y[y == 0] = -1
+        y_true = y.copy()
+        y_true[y_true == 0] = -1 # to use within fit
 
         # Iterate over M weak classifiers
         for m in range(0, self.rounds):
             
             # Set weights for current boosting iteration
             if m == 0:
-                w_i = np.ones(len(y)) * 1 / len(y)  # At m = 0, weights are all the same and equal to 1 / N
+                w_i = np.ones(len(y)) * 1 / len(y_true)  # At m = 0, weights are all the same and equal to 1 / N
             else:
-                w_i = update_weights(w_i, alpha_m, y, y_pred)
+                w_i = update_weights(w_i, alpha_m, y_true, y_pred)
                 w_i = w_i / np.sum(w_i) # maybe don't need to normalize? I don't think it actually matters
             # print(w_i)
             
             # (a) Fit weak classifier and predict labels
             stump = DecisionTreeClassifier(max_depth = self.maxDTdepth)     # Stump: Two terminal-node classification tree
-            stump.fit(X, y, sample_weight = w_i)
+            stump.fit(X, y_true, sample_weight = w_i)
             y_pred = stump.predict(X)
             
             self.stumps.append(stump) # Save to list of weak classifiers
 
             # (b) Compute error
-            error_m = compute_error(y, y_pred, w_i, self.type2penalty, self.pen_factor)
+            error_m = compute_error(y_true, y_pred, w_i, self.type2penalty, self.pen_factor)
             self.training_errors.append(error_m)
             # print(error_m)
 
@@ -119,6 +139,12 @@ class AdaBoostWeakClassic:
             #     alpha_m *= penalty
             self.alphas.append(alpha_m)
             # print(alpha_m)
+
+            if m % 10 == 0:
+                type2error, type1error, correct = eval_errors(y = y, y_pred = self.predict(X))
+                self.type2errors.append(type2error)
+                self.accuracies.append(correct/len(y))
+
 
         assert len(self.stumps) == len(self.alphas)
 
@@ -133,7 +159,8 @@ class AdaBoostWeakClassic:
         final_predictions = np.zeros(X.shape[0])
 
         # Predict class label for each weak classifier, weighted by alpha_m
-        for m in range(self.rounds):
+        #for m in range(self.rounds):
+        for m in range(len(self.alphas)):
             y_pred_m = self.stumps[m].predict(X) * self.alphas[m]
             final_predictions += y_pred_m
 
