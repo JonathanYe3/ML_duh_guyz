@@ -148,7 +148,7 @@ class AdaBoostWeakClassic:
                 if self.eval_train_test:
                     type2error, type1error, correct = eval_errors(y = y_test, y_pred = self.predict(X_test))
                     self.test_type2errors.append(type2error)
-                    self.test_accuracies.append(correct/len(y))
+                    self.test_accuracies.append(correct/len(y_test))
                     
         assert len(self.stumps) == len(self.alphas)
 
