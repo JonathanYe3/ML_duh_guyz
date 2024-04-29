@@ -83,29 +83,34 @@ def type2err(y, y_pred):
 # Define AdaBoost class
 class AdaBoostWeakClassic:
     
-    def __init__(self, rounds, type2penalty = False, maxDTdepth = 1, pen_factor = 0.5):
+    def __init__(self, rounds, type2penalty = False, maxDTdepth = 1, pen_factor = 0.5, eval_train_test = False):
         # self.w_i = None
         self.alphas = []
         self.stumps = []
         self.rounds = rounds
-        self.training_errors = []
-        self.prediction_errors = []
+        
         self.type2penalty = type2penalty
         self.maxDTdepth = maxDTdepth
         self.pen_factor = pen_factor
-        self.accuracies = []
-        self.type2errors = []
+        self.prediction_errors = []
+        self.eval_train_test = eval_train_test
 
-    def fit(self, X, y):
+    def fit(self, X, y, X_test = None, y_test = None):
         '''
         Fit model. Arguments:
         X: independent variables
         y: target variable
         '''
-        
         # Clear before calling
         self.alphas = [] 
         self.training_errors = []
+        
+        # eval lists
+        self.train_accuracies = []
+        self.train_type2errors = []
+        self.test_accuracies = []
+        self.test_type2errors = []
+
         y_true = y.copy()
         y_true[y_true == 0] = -1 # to use within fit
 
@@ -121,7 +126,7 @@ class AdaBoostWeakClassic:
             # print(w_i)
             
             # (a) Fit weak classifier and predict labels
-            stump = DecisionTreeClassifier(max_depth = self.maxDTdepth)     # Stump: Two terminal-node classification tree
+            stump = DecisionTreeClassifier(max_depth = self.maxDTdepth)     # weak stump
             stump.fit(X, y_true, sample_weight = w_i)
             y_pred = stump.predict(X)
             
@@ -134,18 +139,17 @@ class AdaBoostWeakClassic:
 
             # (c) Compute alpha
             alpha_m = compute_alpha(error_m)
-            # if self.type2penalty:
-            #     penalty = type2err(y = y, y_pred = y_pred)
-            #     alpha_m *= penalty
             self.alphas.append(alpha_m)
-            # print(alpha_m)
 
             if m % 10 == 0:
                 type2error, type1error, correct = eval_errors(y = y, y_pred = self.predict(X))
-                self.type2errors.append(type2error)
-                self.accuracies.append(correct/len(y))
-
-
+                self.train_type2errors.append(type2error)
+                self.train_accuracies.append(correct/len(y))
+                if self.eval_train_test:
+                    type2error, type1error, correct = eval_errors(y = y_test, y_pred = self.predict(X_test))
+                    self.test_type2errors.append(type2error)
+                    self.test_accuracies.append(correct/len(y))
+                    
         assert len(self.stumps) == len(self.alphas)
 
 
